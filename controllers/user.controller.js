@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs'
 
 const register = async (req, res) => {
     try {
-        const { name, email, telephone, dni, password, role = "event_coordinator", status = "active" } = req.body
+        const { name, email, telephone, dni, password, role = "event_coordinator", status = "active" } = req
 
         if (!name || !email || !telephone || !dni || !password) {
             return res.status(400).json({ ok: false, msg: "Missing required fields: name, email, telephone, dni, password" })
@@ -16,7 +16,7 @@ const register = async (req, res) => {
             return res.status(409).json({ ok: false, msg: "Email already exists" })
         }
 
-        const newUser = await UserModel.create({ name, email, telephone, dni, password, role, status })
+        const newUser = await UserModel.creat({ name, email, telephone, dni, password, role, status })
 
         const token = jwt.sign(
             { email: newUser.email, role: newUser.role, id: newUser.id },

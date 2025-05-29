@@ -20,7 +20,7 @@ users.forEach(async user => {
   }
 })
 
-const create = async ({ name, email, telephone, dni, password, role = "event_coordinator", status = "active" }) => {
+const create = async ({ name, email, telephone, dni, role = "event_coordinator", status = "active" }) => {
     const hashedPassword = await bcrypt.hash(password, 10)
     const newUser = {
         id: users.length + 1,
@@ -46,7 +46,7 @@ const findAll = async () => {
     return users
 }
 
-const findOneById = async (id) => {
+const findOneById = async () => {
     return users.find(user => user.id === Number(id))
 }
 

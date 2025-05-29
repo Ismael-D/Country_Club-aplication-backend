@@ -1,6 +1,6 @@
-import { MemberModel } from '../models/member.model.js'
+import { MemberModel } from '../models/members.model.js'
 
-export const MemberController = {
+export const MemberControllers = {
   create: async (req, res) => {
     try {
       const { name, lastName, dni, email, telephone, payDay, debt = 0, status = "no_debt" } = req.body

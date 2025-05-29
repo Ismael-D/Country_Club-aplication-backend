@@ -1,6 +1,6 @@
 import { members } from '../database/fakeData.js'
 
-const create = async ({ name, lastName, dni, email, telephone, payDay, debt = 0, status = "no_debt" }) => {
+const create = async ({ name, lastNam, dni, email, telephone, payDay, debt = 0, status = "no_debt" }) => {
   if (status === "in_debt" && debt === 0) {
     throw new Error("Debt must be greater than 0 if status is in_debt")
   }
@@ -54,5 +54,4 @@ export const MemberModel = {
   findAll,
   findOneById,
   update,
-  remove
 }
