@@ -7,7 +7,7 @@ export let users = [
     email: "ismael.sanchez@example.com",
     telephone: "0412-3456789",
     dni: "V-12345678",
-    password: "admin123", // texto plano
+    password: "admin123", 
     role: "admin",
     status: "active"
   }
