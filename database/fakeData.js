@@ -20,6 +20,16 @@ export let users = [
     status: "active"
   }
 ]
+/*{
+    id: 2,
+    name: "Maria Perez",
+    email: "maria.perez@example.com",
+    telephone: "0414-9876543",
+    dni: "V-87654321",
+    password: "maria123", 
+    role: "manager",
+    status: "active"
+  }*/ 
 
 export let members = [
   {

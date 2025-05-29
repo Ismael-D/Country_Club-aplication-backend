@@ -96,7 +96,6 @@ const profile = async (req, res) => {
 const findAll = async (req, res) => {
     try {
         const users = await UserModel.findAll()
-        // Elimina el campo password de cada usuario
         const usersWithoutPasswords = users.map(({ password, ...rest }) => rest)
         return res.json({ ok: true, msg: usersWithoutPasswords })
     } catch (error) {
