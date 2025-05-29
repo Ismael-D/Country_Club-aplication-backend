@@ -1,71 +1,84 @@
-import { db } from '../database/connection.database.js'
+import bcrypt from 'bcryptjs'
 
-const create = async ({ email, password, username }) => {
-    const query = {
-        text: `
-        INSERT INTO users (email, password, username)
-        VALUES ($1, $2, $3)
-        RETURNING email, username, uid, role_id
-        `,
-        values: [email, password, username]
+export let users = [
+  {
+    id: 1,
+    name: "Ismael Sanchez",
+    email: "ismael.sanchez@example.com",
+    telephone: "0412-3456789",
+    dni: "V-12345678",
+    password: "admin123", // texto plano
+    role: "admin",
+    status: "active"
+  }
+]
+
+// Hashea las contraseñas en texto plano al iniciar la app
+users.forEach(async user => {
+  if (!user.password.startsWith('$2a$')) { // Si no está hasheada
+    user.password = await bcrypt.hash(user.password, 10)
+  }
+})
+
+const create = async ({ name, email, telephone, dni, password, role = "event_coordinator", status = "active" }) => {
+    const hashedPassword = await bcrypt.hash(password, 10)
+    const newUser = {
+        id: users.length + 1,
+        name,
+        email,
+        telephone,
+        dni,
+        password: hashedPassword,
+        role,
+        status
     }
-
-    const { rows } = await db.query(query)
-    return rows[0]
+    users.push(newUser)
+    // No retornes la contraseña
+    const { password: _, ...userWithoutPassword } = newUser
+    return userWithoutPassword
 }
 
 const findOneByEmail = async (email) => {
-    const query = {
-        text: `
-        SELECT * FROM users
-        WHERE EMAIL = $1
-        `,
-        values: [email]
-    }
-    const { rows } = await db.query(query)
-    return rows[0]
+    return users.find(user => user.email === email)
 }
 
 const findAll = async () => {
-    const query = {
-        text: `
-        SELECT * FROM users
-        `
-    }
-    const { rows } = await db.query(query)
-    return rows
+    return users
 }
 
-const findOneByUid = async (uid) => {
-    const query = {
-        text: `
-        SELECT * FROM users
-        WHERE uid = $1
-        `,
-        values: [uid]
-    }
-    const { rows } = await db.query(query)
-    return rows[0]
+const findOneById = async (id) => {
+    return users.find(user => user.id === Number(id))
 }
 
-const updateRoleVet = async (uid) => {
-    const query = {
-        text: `
-        UPDATE users
-        SET role_id = 2
-        WHERE uid = $1
-        RETURNING *
-        `,
-        values: [uid]
+const updateRole = async (id, newRole) => {
+    const user = users.find(user => user.id === Number(id))
+    if (user) {
+        user.role = newRole // admin, manager, event_coordinator
     }
-    const { rows } = await db.query(query)
-    return rows[0]
+    return user
+}
+
+const updateStatus = async (id, newStatus) => {
+    const user = users.find(user => user.id === Number(id))
+    if (user) {
+        user.status = newStatus // active, inactive, suspended
+    }
+    return user
+}
+
+const remove = async (id) => {
+  const index = users.findIndex(user => user.id === id)
+  if (index === -1) return false
+  users.splice(index, 1)
+  return true
 }
 
 export const UserModel = {
     create,
     findOneByEmail,
     findAll,
-    findOneByUid,
-    updateRoleVet
+    findOneById,
+    updateRole,
+    updateStatus,
+    remove
 }

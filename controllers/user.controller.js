@@ -1,15 +1,14 @@
-import bcryptjs from 'bcryptjs'
-import jwt from "jsonwebtoken"
 import { UserModel } from '../models/user.model.js'
-
+import jwt from "jsonwebtoken"
+import bcrypt from 'bcryptjs'
 
 // /api/v1/users/register
 const register = async (req, res) => {
     try {
-        const { username, email, password } = req.body
+        const { name, email, telephone, dni, password, role = "event_coordinator", status = "active" } = req.body
 
-        if (!username || !email || !password) {
-            return res.status(400).json({ ok: false, msg: "Missing required fields: email, password, username" })
+        if (!name || !email || !telephone || !dni || !password) {
+            return res.status(400).json({ ok: false, msg: "Missing required fields: name, email, telephone, dni, password" })
         }
 
         const user = await UserModel.findOneByEmail(email)
@@ -17,22 +16,18 @@ const register = async (req, res) => {
             return res.status(409).json({ ok: false, msg: "Email already exists" })
         }
 
-        const salt = await bcryptjs.genSalt(10)
-        const hashedPassword = await bcryptjs.hash(password, salt)
+        const newUser = await UserModel.create({ name, email, telephone, dni, password, role, status })
 
-        const newUser = await UserModel.create({ email, password: hashedPassword, username })
-
-        const token = jwt.sign({ email: newUser.email, role_id: newUser.role_id },
+        const token = jwt.sign(
+            { email: newUser.email, role: newUser.role, id: newUser.id },
             process.env.JWT_SECRET,
-            {
-                expiresIn: "1h"
-            }
+            { expiresIn: "1h" }
         )
 
         return res.status(201).json({
             ok: true,
             msg: {
-                token, role_id: newUser.role_id
+                token, role: newUser.role
             }
         })
     } catch (error) {
@@ -44,15 +39,13 @@ const register = async (req, res) => {
     }
 }
 
-// /api/v1/users/login
+// /api/v1/users/login (solo por email para datos quemados)
 const login = async (req, res) => {
     try {
         const { email, password } = req.body
 
         if (!email || !password) {
-            return res
-                .status(400)
-                .json({ error: "Missing required fields: email, password" });
+            return res.status(400).json({ error: "Missing required fields: email, password" });
         }
 
         const user = await UserModel.findOneByEmail(email)
@@ -60,22 +53,20 @@ const login = async (req, res) => {
             return res.status(404).json({ error: "User not found" });
         }
 
-        const isMatch = await bcryptjs.compare(password, user.password)
-
-        if (!isMatch) {
-            return res.status(401).json({ error: "Invalid credentials" });
+        const validPassword = await bcrypt.compare(password, user.password)
+        if (!validPassword) {
+            return res.status(401).json({ error: "Invalid credentials" })
         }
 
-        const token = jwt.sign({ email: user.email, role_id: user.role_id },
+        const token = jwt.sign(
+            { email: user.email, role: user.role, id: user.id },
             process.env.JWT_SECRET,
-            {
-                expiresIn: "1h"
-            }
+            { expiresIn: "1h" }
         )
 
         return res.json({
             ok: true, msg: {
-                token, role_id: user.role_id
+                token, role: user.role
             }
         })
     } catch (error) {
@@ -89,10 +80,11 @@ const login = async (req, res) => {
 
 const profile = async (req, res) => {
     try {
-
         const user = await UserModel.findOneByEmail(req.email)
+        if (!user) {
+            return res.status(404).json({ ok: false, msg: "User not found" })
+        }
         return res.json({ ok: true, msg: user })
-
     } catch (error) {
         console.log(error)
         return res.status(500).json({
@@ -105,8 +97,9 @@ const profile = async (req, res) => {
 const findAll = async (req, res) => {
     try {
         const users = await UserModel.findAll()
-
-        return res.json({ ok: true, msg: users })
+        // Elimina el campo password de cada usuario
+        const usersWithoutPasswords = users.map(({ password, ...rest }) => rest)
+        return res.json({ ok: true, msg: usersWithoutPasswords })
     } catch (error) {
         console.log(error)
         return res.status(500).json({
@@ -116,22 +109,25 @@ const findAll = async (req, res) => {
     }
 }
 
-const updateRoleVet = async (req, res) => {
+// Actualiza el rol del usuario (admin, manager, event_coordinator)
+const updateRole = async (req, res) => {
     try {
-        const { uid } = req.params
+        const { id } = req.params
+        const { role } = req.body
 
-        const user = await UserModel.findOneByUid(uid)
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
+        if (!["admin", "manager", "event_coordinator"].includes(role)) {
+            return res.status(400).json({ error: "Invalid role" })
         }
 
-        const updatedUser = await UserModel.updateRoleVet(uid)
+        const user = await UserModel.updateRole(id, role)
+        if (!user) {
+            return res.status(404).json({ error: "User not found" })
+        }
 
         return res.json({
             ok: true,
-            msg: updatedUser
+            msg: user
         })
-
     } catch (error) {
         console.log(error)
         return res.status(500).json({
@@ -139,6 +135,17 @@ const updateRoleVet = async (req, res) => {
             msg: 'Error server'
         })
     }
+}
+
+const remove = async (req, res) => {
+    const { id } = req.params
+    // Solo admin puede eliminar usuarios
+    if (req.user?.role !== "admin") {
+        return res.status(403).json({ ok: false, msg: "Only admin can delete users" })
+    }
+    const deleted = await UserModel.remove(id)
+    if (!deleted) return res.status(404).json({ ok: false, msg: "User not found" })
+    res.json({ ok: true, msg: "User deleted" })
 }
 
 export const UserController = {
@@ -146,5 +153,6 @@ export const UserController = {
     login,
     profile,
     findAll,
-    updateRoleVet
+    updateRole,
+    remove
 }

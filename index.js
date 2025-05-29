@@ -1,20 +1,18 @@
 import 'dotenv/config'
-import express from 'express';
+import express from 'express'
 
 import userRouter from './routes/user.route.js'
-import petRouter from './routes/pet.route.js'
-import publicRouter from './routes/public.route.js'
+import memberRouter from './routes/member.route.js' // Agrega esta línea
 
-const app = express();
+const app = express()
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(express.static('public'))
 
-app.use('/', publicRouter)
 app.use('/api/v1/users', userRouter)
-app.use('/api/v1/pets', petRouter)
+app.use('/api/v1/members', memberRouter) // Agrega esta línea
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000
 
-app.listen(PORT, () => console.log('Servidor andando en ' + PORT)) 
+app.listen(PORT, () => console.log('Servidor andando en ' + PORT))
