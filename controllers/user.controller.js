@@ -2,7 +2,7 @@ import { UserModel } from '../models/user.model.js'
 import jwt from "jsonwebtoken"
 import bcrypt from 'bcryptjs'
 
-// /api/v1/users/register
+
 const register = async (req, res) => {
     try {
         const { name, email, telephone, dni, password, role = "event_coordinator", status = "active" } = req.body
@@ -39,7 +39,6 @@ const register = async (req, res) => {
     }
 }
 
-// /api/v1/users/login (solo por email para datos quemados)
 const login = async (req, res) => {
     try {
         const { email, password } = req.body
@@ -109,7 +108,7 @@ const findAll = async (req, res) => {
     }
 }
 
-// Actualiza el rol del usuario (admin, manager, event_coordinator)
+
 const updateRole = async (req, res) => {
     try {
         const { id } = req.params
@@ -139,7 +138,7 @@ const updateRole = async (req, res) => {
 
 const remove = async (req, res) => {
     const { id } = req.params
-    // Solo admin puede eliminar usuarios
+    
     if (req.user?.role !== "admin") {
         return res.status(403).json({ ok: false, msg: "Only admin can delete users" })
     }

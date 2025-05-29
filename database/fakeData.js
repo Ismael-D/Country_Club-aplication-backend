@@ -5,7 +5,7 @@ export let users = [
     email: "ismael.sanchez@example.com",
     telephone: "0412-3456789",
     dni: "V-12345678",
-    password: "admin123", // Contraseña en texto plano SOLO para pruebas
+    password: "admin123", 
     role: "admin",
     status: "active"
   },
@@ -15,7 +15,7 @@ export let users = [
     email: "maria.perez@example.com",
     telephone: "0414-9876543",
     dni: "V-87654321",
-    password: "maria123", // Contraseña en texto plano SOLO para pruebas
+    password: "maria123", 
     role: "manager",
     status: "active"
   }

@@ -15,7 +15,7 @@ export let users = [
 
 // Hashea las contraseñas en texto plano al iniciar la app
 users.forEach(async user => {
-  if (!user.password.startsWith('$2a$')) { // Si no está hasheada
+  if (!user.password.startsWith('$2a$')) {
     user.password = await bcrypt.hash(user.password, 10)
   }
 })
@@ -33,7 +33,7 @@ const create = async ({ name, email, telephone, dni, password, role = "event_coo
         status
     }
     users.push(newUser)
-    // No retornes la contraseña
+
     const { password: _, ...userWithoutPassword } = newUser
     return userWithoutPassword
 }
@@ -53,7 +53,7 @@ const findOneById = async (id) => {
 const updateRole = async (id, newRole) => {
     const user = users.find(user => user.id === Number(id))
     if (user) {
-        user.role = newRole // admin, manager, event_coordinator
+        user.role = newRole
     }
     return user
 }
@@ -61,7 +61,7 @@ const updateRole = async (id, newRole) => {
 const updateStatus = async (id, newStatus) => {
     const user = users.find(user => user.id === Number(id))
     if (user) {
-        user.status = newStatus // active, inactive, suspended
+        user.status = newStatus 
     }
     return user
 }

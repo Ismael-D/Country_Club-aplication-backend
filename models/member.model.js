@@ -30,7 +30,7 @@ const update = async (id, data) => {
   const member = members.find(m => m.id === id)
   if (!member) return null
 
-  // Validación de reglas de status y debt
+
   if (data.status === "in_debt" && data.debt === 0) {
     throw new Error("Debt must be greater than 0 if status is in_debt")
   }

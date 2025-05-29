@@ -24,7 +24,6 @@ export const MemberController = {
   },
 
   update: async (req, res) => {
-    // Aquí deberías verificar que el usuario es admin antes de permitir la actualización
     if (req.user?.role !== "admin") {
       return res.status(403).json({ ok: false, msg: "Only admin can update members" })
     }
@@ -39,7 +38,6 @@ export const MemberController = {
   },
 
   remove: async (req, res) => {
-    // Solo admin puede eliminar miembros
     if (req.user?.role !== "admin") {
       return res.status(403).json({ ok: false, msg: "Only admin can delete members" })
     }
