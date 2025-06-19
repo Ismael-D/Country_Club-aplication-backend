@@ -38,6 +38,12 @@ const register = async (req, res) => {
             }
         })
     } catch (error) {
+        if (error.message && error.message.includes('llave duplicada viola restricción de unicidad')) {
+            return res.status(409).json({
+                ok: false,
+                msg: 'DNI o email ya registrado'
+            })
+        }
         console.log(error)
         return res.status(500).json({
             ok: false,
@@ -127,8 +133,11 @@ const findAll = async (req, res) => {
 
 const updateRole = async (req, res) => {
     try {
-        const { id } = req.params
-        const { role_id } = req.body
+        const { id, role_id } = req.body
+
+        if (!id || !role_id) {
+            return res.status(400).json({ error: "Missing required fields: id, role_id" })
+        }
 
         if (![1, 2, 3].includes(role_id)) {
             return res.status(400).json({ error: "Invalid role_id. Must be 1 (admin), 2 (manager), or 3 (event_coordinator)" })
@@ -164,6 +173,12 @@ const remove = async (req, res) => {
         if (!deleted) return res.status(404).json({ ok: false, msg: "User not found" })
         res.json({ ok: true, msg: "User deleted" })
     } catch (error) {
+        if (error.message && error.message.includes('llave foránea')) {
+            return res.status(409).json({
+                ok: false,
+                msg: 'No se puede eliminar el usuario porque está asociado a miembros existentes.'
+            })
+        }
         console.log(error)
         return res.status(500).json({
             ok: false,

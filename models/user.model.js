@@ -73,6 +73,7 @@ const findAll = async () => {
 
 const updateRole = async (id, role_id) => {
     try {
+        console.log('[updateRole] id:', id, 'role_id:', role_id)
         const query = `
             UPDATE users 
             SET role_id = $2
@@ -80,9 +81,8 @@ const updateRole = async (id, role_id) => {
             RETURNING id
         `
         const result = await db.query(query, [id, role_id])
-        
+        console.log('[updateRole] result.rows:', result.rows)
         if (result.rows.length === 0) return null
-        
         // Get the updated user with role_name
         return await findOneById(id)
     } catch (error) {
