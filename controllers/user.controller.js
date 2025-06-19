@@ -105,7 +105,6 @@ const profile = async (req, res) => {
             return res.status(404).json({ ok: false, msg: "User not found" })
         }
         
-        // No enviar la contraseña en la respuesta
         const { password, ...userWithoutPassword } = user
         return res.json({ ok: true, msg: userWithoutPassword })
     } catch (error) {
