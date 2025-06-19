@@ -5,7 +5,6 @@ import { userRegisterSchema, userLoginSchema } from "../schemas/user.schema.js";
 
 const router = Router()
 
-// api/v1/auth
 
 router.post('/register', validateBody(userRegisterSchema), UserController.register)
 router.post('/login', validateBody(userLoginSchema), UserController.login)
