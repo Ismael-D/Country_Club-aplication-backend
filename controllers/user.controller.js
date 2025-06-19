@@ -5,10 +5,10 @@ import bcrypt from 'bcryptjs'
 
 const register = async (req, res) => {
     try {
-        const { name, email, telephone, dni, password, role = "event_coordinator", status = "active" } = req
+        const { first_name, last_name, email, phone, DNI, password, role_id = 3, status = "active", birth_date } = req.body
 
-        if (!name || !email || !telephone || !dni || !password) {
-            return res.status(400).json({ ok: false, msg: "Missing required fields: name, email, telephone, dni, password" })
+        if (!first_name || !last_name || !email || !phone || !DNI || !password) {
+            return res.status(400).json({ ok: false, msg: "Missing required fields: first_name, last_name, email, phone, DNI, password" })
         }
 
         const user = await UserModel.findOneByEmail(email)
@@ -16,10 +16,10 @@ const register = async (req, res) => {
             return res.status(409).json({ ok: false, msg: "Email already exists" })
         }
 
-        const newUser = await UserModel.creat({ name, email, telephone, dni, password, role, status })
+        const newUser = await UserModel.create({ first_name, last_name, email, phone, DNI, password, role_id, status, birth_date })
 
         const token = jwt.sign(
-            { email: newUser.email, role: newUser.role, id: newUser.id },
+            { email: newUser.email, role: newUser.role_name, id: newUser.id },
             process.env.JWT_SECRET,
             { expiresIn: "1h" }
         )
@@ -27,7 +27,14 @@ const register = async (req, res) => {
         return res.status(201).json({
             ok: true,
             msg: {
-                token, role: newUser.role
+                token, 
+                role: newUser.role_name,
+                user: {
+                    id: newUser.id,
+                    first_name: newUser.first_name,
+                    last_name: newUser.last_name,
+                    email: newUser.email
+                }
             }
         })
     } catch (error) {
@@ -58,14 +65,22 @@ const login = async (req, res) => {
         }
 
         const token = jwt.sign(
-            { email: user.email, role: user.role, id: user.id },
+            { email: user.email, role: user.role_name, id: user.id },
             process.env.JWT_SECRET,
             { expiresIn: "1h" }
         )
 
         return res.json({
-            ok: true, msg: {
-                token, role: user.role
+            ok: true, 
+            msg: {
+                token, 
+                role: user.role_name,
+                user: {
+                    id: user.id,
+                    first_name: user.first_name,
+                    last_name: user.last_name,
+                    email: user.email
+                }
             }
         })
     } catch (error) {
@@ -83,7 +98,10 @@ const profile = async (req, res) => {
         if (!user) {
             return res.status(404).json({ ok: false, msg: "User not found" })
         }
-        return res.json({ ok: true, msg: user })
+        
+        // No enviar la contraseña en la respuesta
+        const { password, ...userWithoutPassword } = user
+        return res.json({ ok: true, msg: userWithoutPassword })
     } catch (error) {
         console.log(error)
         return res.status(500).json({
@@ -96,8 +114,7 @@ const profile = async (req, res) => {
 const findAll = async (req, res) => {
     try {
         const users = await UserModel.findAll()
-        const usersWithoutPasswords = users.map(({ password, ...rest }) => rest)
-        return res.json({ ok: true, msg: usersWithoutPasswords })
+        return res.json({ ok: true, msg: users })
     } catch (error) {
         console.log(error)
         return res.status(500).json({
@@ -111,13 +128,13 @@ const findAll = async (req, res) => {
 const updateRole = async (req, res) => {
     try {
         const { id } = req.params
-        const { role } = req.body
+        const { role_id } = req.body
 
-        if (!["admin", "manager", "event_coordinator"].includes(role)) {
-            return res.status(400).json({ error: "Invalid role" })
+        if (![1, 2, 3].includes(role_id)) {
+            return res.status(400).json({ error: "Invalid role_id. Must be 1 (admin), 2 (manager), or 3 (event_coordinator)" })
         }
 
-        const user = await UserModel.updateRole(id, role)
+        const user = await UserModel.updateRole(id, role_id)
         if (!user) {
             return res.status(404).json({ error: "User not found" })
         }
@@ -136,14 +153,23 @@ const updateRole = async (req, res) => {
 }
 
 const remove = async (req, res) => {
-    const { id } = req.params
-    
-    if (req.user?.role !== "admin") {
-        return res.status(403).json({ ok: false, msg: "Only admin can delete users" })
+    try {
+        const { id } = req.params
+        
+        if (req.user?.role !== "admin") {
+            return res.status(403).json({ ok: false, msg: "Only admin can delete users" })
+        }
+        
+        const deleted = await UserModel.remove(id)
+        if (!deleted) return res.status(404).json({ ok: false, msg: "User not found" })
+        res.json({ ok: true, msg: "User deleted" })
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({
+            ok: false,
+            msg: 'Error server'
+        })
     }
-    const deleted = await UserModel.remove(id)
-    if (!deleted) return res.status(404).json({ ok: false, msg: "User not found" })
-    res.json({ ok: true, msg: "User deleted" })
 }
 
 export const UserController = {

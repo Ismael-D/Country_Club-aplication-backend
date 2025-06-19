@@ -1,10 +1,26 @@
-import { MemberModel } from '../models/members.model.js'
+import { MemberModel } from '../models/member.model.js'
 
-export const MemberControllers = {
+export const MemberController = {
   create: async (req, res) => {
     try {
-      const { name, lastName, dni, email, telephone, payDay, debt = 0, status = "no_debt" } = req.body
-      const member = await MemberModel.create({ name, lastName, dni, email, telephone, payDay, debt, status })
+      const { DNI, first_name, last_name, phone, email, status = "active", start_date, end_date } = req.body
+      
+      if (!DNI || !first_name || !last_name || !start_date || !end_date) {
+        return res.status(400).json({ ok: false, msg: "Missing required fields: DNI, first_name, last_name, start_date, end_date" })
+      }
+      
+      const member = await MemberModel.create({ 
+        registrator_id: req.user.id, 
+        DNI, 
+        first_name, 
+        last_name, 
+        phone, 
+        email, 
+        status, 
+        start_date, 
+        end_date 
+      })
+      
       res.status(201).json({ ok: true, member })
     } catch (error) {
       res.status(400).json({ ok: false, msg: error.message })
@@ -12,15 +28,23 @@ export const MemberControllers = {
   },
 
   findAll: async (req, res) => {
-    const members = await MemberModel.findAll()
-    res.json({ ok: true, members })
+    try {
+      const members = await MemberModel.findAll()
+      res.json({ ok: true, members })
+    } catch (error) {
+      res.status(500).json({ ok: false, msg: error.message })
+    }
   },
 
   findOne: async (req, res) => {
-    const { id } = req.params
-    const member = await MemberModel.findOneById(id)
-    if (!member) return res.status(404).json({ ok: false, msg: "Member not found" })
-    res.json({ ok: true, member })
+    try {
+      const { id } = req.params
+      const member = await MemberModel.findOneById(id)
+      if (!member) return res.status(404).json({ ok: false, msg: "Member not found" })
+      res.json({ ok: true, member })
+    } catch (error) {
+      res.status(500).json({ ok: false, msg: error.message })
+    }
   },
 
   update: async (req, res) => {
@@ -41,9 +65,13 @@ export const MemberControllers = {
     if (req.user?.role !== "admin") {
       return res.status(403).json({ ok: false, msg: "Only admin can delete members" })
     }
-    const { id } = req.params
-    const deleted = await MemberModel.remove(id)
-    if (!deleted) return res.status(404).json({ ok: false, msg: "Member not found" })
-    res.json({ ok: true, msg: "Member deleted" })
+    try {
+      const { id } = req.params
+      const deleted = await MemberModel.remove(id)
+      if (!deleted) return res.status(404).json({ ok: false, msg: "Member not found" })
+      res.json({ ok: true, msg: "Member deleted" })
+    } catch (error) {
+      res.status(500).json({ ok: false, msg: error.message })
+    }
   }
 }

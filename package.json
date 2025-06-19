@@ -5,7 +5,7 @@
  "main": "index.js",
  "scripts": {
   "dev": "nodemon --exec babel-node index.js",
-  "start": "node src/index.js"
+  "start": "node index.js"
  },
  "keywords": [],
  "author": "Ismael Sanchez",
@@ -16,7 +16,9 @@
   "dotenv": "^16.5.0",
   "express": "^5.1.0",
   "jsonwebtoken": "^9.0.2",
-  "pg": "^8.16.0"
+  "node-fetch": "^3.3.2",
+  "pg": "^8.16.0",
+  "zod": "^3.25.67"
  },
  "devDependencies": {
   "@babel/core": "^7.27.3",

@@ -1,19 +1,17 @@
 import { Router } from "express";
-import { UserController } from "../controllers/users.controller.js";
+import { UserController } from "../controllers/user.controller.js";
 import { verifyAdmin, verifyToken } from "../middlewares/jwt.middlware.js";
+import { validateId } from "../middlewares/error.middleware.js";
 
 const router = Router()
 
-
 // api/v1/users
 
-router.post('/register', UserController.register)
-router.post('/login', UserController.login)
 router.get('/profile', verifyToken, UserController.profile)
 
-// Admin
+// Admin operations
 router.get('/', verifyToken, verifyAdmin, UserController.findAll)
 router.put('/update-role', verifyToken, verifyAdmin, UserController.updateRole)
-router.delete('/:id', verifyToken, verifyAdmin, UserController.remove)
+router.delete('/:id', verifyToken, verifyAdmin, validateId, UserController.remove)
 
 export default router;

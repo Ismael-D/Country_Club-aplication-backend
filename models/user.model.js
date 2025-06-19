@@ -1,83 +1,129 @@
 import bcrypt from 'bcryptjs'
+import { db } from '../database/connection.database.js'
 
-export let users = [
-  {
-    id: 1,
-    name: "Ismael Sanchez",
-    email: "ismael.sanchez@example.com",
-    telephone: "0412-3456789",
-    dni: "V-12345678",
-    password: "admin123", 
-    role: "admin",
-    status: "active"
-  }
-]
-
-// Hashea las contraseñas en texto plano al iniciar la app
-users.forEach(async user => {
-  if (!user.password.startsWith('$2a$')) {
-    user.password = await bcrypt.hash(user.password, 10)
-  }
-})
-
-const create = async ({ name, email, telephone, dni, role = "event_coordinator", status = "active" }) => {
-    const hashedPassword = await bcrypt.hash(password, 10)
-    const newUser = {
-        id: users.length + 1,
-        name,
-        email,
-        telephone,
-        dni,
-        password: hashedPassword,
-        role,
-        status
+const create = async ({ first_name, last_name, email, phone, DNI, password, role_id = 3, status = "active", birth_date }) => {
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10)
+        
+        const query = `
+            INSERT INTO users (DNI, first_name, last_name, email, password, role_id, status, phone, birth_date)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING id, DNI, first_name, last_name, email, role_id, status, phone, birth_date, registration_date
+        `
+        
+        const values = [DNI, first_name, last_name, email, hashedPassword, role_id, status, phone, birth_date]
+        const result = await db.query(query, values)
+        
+        // Get the created user with role_name
+        const userWithRole = await findOneById(result.rows[0].id)
+        
+        return userWithRole
+    } catch (error) {
+        throw new Error(`Error creating user: ${error.message}`)
     }
-    users.push(newUser)
-
-    const { password: _, ...userWithoutPassword } = newUser
-    return userWithoutPassword
 }
 
 const findOneByEmail = async (email) => {
-    return users.find(user => user.email === email)
+    try {
+        const query = `
+            SELECT u.id, u.DNI, u.first_name, u.last_name, u.email, u.password, u.role_id, 
+                   u.status, u.phone, u.birth_date, u.registration_date, r.name as role_name
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            WHERE u.email = $1
+        `
+        const result = await db.query(query, [email])
+        return result.rows[0] || null
+    } catch (error) {
+        throw new Error(`Error finding user by email: ${error.message}`)
+    }
+}
+
+const findOneById = async (id) => {
+    try {
+        const query = `
+            SELECT u.id, u.DNI, u.first_name, u.last_name, u.email, u.role_id, 
+                   u.status, u.phone, u.birth_date, u.registration_date, r.name as role_name
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            WHERE u.id = $1
+        `
+        const result = await db.query(query, [id])
+        return result.rows[0] || null
+    } catch (error) {
+        throw new Error(`Error finding user by id: ${error.message}`)
+    }
 }
 
 const findAll = async () => {
-    return users
-}
-
-const findOneById = async () => {
-    return users.find(user => user.id === Number(id))
-}
-
-const updateRole = async (id, newRole) => {
-    const user = users.find(user => user.id === Number(id))
-    if (user) {
-        user.role = newRole
+    try {
+        const query = `
+            SELECT u.id, u.DNI, u.first_name, u.last_name, u.email, u.role_id, 
+                   u.status, u.phone, u.birth_date, u.registration_date, r.name as role_name
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            ORDER BY u.id
+        `
+        const result = await db.query(query)
+        return result.rows
+    } catch (error) {
+        throw new Error(`Error finding all users: ${error.message}`)
     }
-    return user
 }
 
-const updateStatus = async (id, newStatus) => {
-    const user = users.find(user => user.id === Number(id))
-    if (user) {
-        user.status = newStatus 
+const updateRole = async (id, role_id) => {
+    try {
+        const query = `
+            UPDATE users 
+            SET role_id = $2
+            WHERE id = $1
+            RETURNING id
+        `
+        const result = await db.query(query, [id, role_id])
+        
+        if (result.rows.length === 0) return null
+        
+        // Get the updated user with role_name
+        return await findOneById(id)
+    } catch (error) {
+        throw new Error(`Error updating user role: ${error.message}`)
     }
-    return user
+}
+
+const updateStatus = async (id, status) => {
+    try {
+        const query = `
+            UPDATE users 
+            SET status = $2
+            WHERE id = $1
+            RETURNING id
+        `
+        const result = await db.query(query, [id, status])
+        
+        if (result.rows.length === 0) return null
+        
+        // Get the updated user with role_name
+        return await findOneById(id)
+    } catch (error) {
+        throw new Error(`Error updating user status: ${error.message}`)
+    }
 }
 
 const remove = async (id) => {
-  const index = users.findIndex(user => user.id === id)
-  if (index === -1) return false
-  users.splice(index, 1)
-  return true
+    try {
+        const query = 'DELETE FROM users WHERE id = $1 RETURNING id'
+        const result = await db.query(query, [id])
+        return result.rows.length > 0
+    } catch (error) {
+        throw new Error(`Error removing user: ${error.message}`)
+    }
 }
 
 export const UserModel = {
     create,
     findOneByEmail,
-    findAll,
     findOneById,
+    findAll,
     updateRole,
     updateStatus,
     remove

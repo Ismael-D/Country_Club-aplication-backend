@@ -1,8 +1,6 @@
-
 import jwt from 'jsonwebtoken'
 
 export const verifyToken = (req, res, next) => {
-
     let token = req.headers.authorization
 
     if (!token) {
@@ -12,10 +10,10 @@ export const verifyToken = (req, res, next) => {
     token = token.split(" ")[1]
 
     try {
-
-        const { email, role_id } = jwt.verify(token, process.env.JWT_SECRET)
+        const { email, role, id } = jwt.verify(token, process.env.JWT_SECRET)
         req.email = email
-        req.role_id = role_id
+        req.role = role
+        req.user = { id, email, role }
 
         next()
     } catch (error) {
@@ -25,16 +23,23 @@ export const verifyToken = (req, res, next) => {
 }
 
 export const verifyAdmin = (req, res, next) => {
-    if (req.role_id === 1) {
+    if (req.role === "admin") {
         return next()
     }
 
-    return res.status(403).json({ error: "Unauthorized only admin user" })
+    return res.status(403).json({ error: "Unauthorized - only admin users allowed" })
 }
 
-export const verifyVet = (req, res, next) => {
-    if (req.role_id === 2 || req.role_id === 1) {
+export const verifyManager = (req, res, next) => {
+    if (req.role === "manager" || req.role === "admin") {
         return next()
     }
-    return res.status(403).json({ error: "Unauthorized only vet user" })
+    return res.status(403).json({ error: "Unauthorized - only manager or admin users allowed" })
+}
+
+export const verifyEventCoordinator = (req, res, next) => {
+    if (req.role === "event_coordinator" || req.role === "manager" || req.role === "admin") {
+        return next()
+    }
+    return res.status(403).json({ error: "Unauthorized - only event coordinator, manager or admin users allowed" })
 }
