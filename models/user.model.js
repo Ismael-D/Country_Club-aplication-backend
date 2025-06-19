@@ -119,6 +119,20 @@ const remove = async (id) => {
     }
 }
 
+const getEventsByOrganizerId = async (organizerId) => {
+    try {
+        const query = `
+            SELECT e.*
+            FROM events e
+            WHERE e.organizer_id = $1
+        `;
+        const result = await db.query(query, [organizerId]);
+        return result.rows;
+    } catch (error) {
+        throw new Error(`Error getting events for organizer: ${error.message}`);
+    }
+}
+
 export const UserModel = {
     create,
     findOneByEmail,
@@ -126,5 +140,6 @@ export const UserModel = {
     findAll,
     updateRole,
     updateStatus,
-    remove
+    remove,
+    getEventsByOrganizerId
 }

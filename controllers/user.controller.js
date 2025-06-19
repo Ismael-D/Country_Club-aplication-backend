@@ -187,11 +187,22 @@ const remove = async (req, res) => {
     }
 }
 
+const getEvents = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const events = await UserModel.getEventsByOrganizerId(id);
+        res.json({ ok: true, events });
+    } catch (error) {
+        res.status(500).json({ ok: false, msg: error.message });
+    }
+}
+
 export const UserController = {
     register,
     login,
     profile,
     findAll,
     updateRole,
-    remove
+    remove,
+    getEvents
 }
