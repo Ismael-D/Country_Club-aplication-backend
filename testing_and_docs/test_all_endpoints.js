@@ -9,7 +9,7 @@ const testEndpoints = async () => {
     // 1. Test User Registration
     console.log('1️⃣ Testing User Registration...');
     try {
-        const registerResponse = await fetch('http://localhost:3000/api/v1/users/register', {
+        const registerResponse = await fetch('http://localhost:3000/api/v1/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -40,7 +40,7 @@ const testEndpoints = async () => {
     // 2. Test User Login
     console.log('2️⃣ Testing User Login...');
     try {
-        const loginResponse = await fetch('http://localhost:3000/api/v1/users/login', {
+        const loginResponse = await fetch('http://localhost:3000/api/v1/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

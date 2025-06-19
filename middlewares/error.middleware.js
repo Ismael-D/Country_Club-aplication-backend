@@ -1,73 +1,56 @@
 import { ZodError } from 'zod'
 import jwt from 'jsonwebtoken'
+import { buildErrorResponse } from '../utils/error.util.js'
 
 // Error handler for database connection issues
 export const handleDatabaseError = (error, req, res, next) => {
   if (error.code === 'ECONNREFUSED') {
-    return res.status(503).json({
-      ok: false,
-      msg: 'Database service unavailable',
-      error: 'Service temporarily unavailable'
-    })
+    const { status, body } = buildErrorResponse({ code: 'DB_UNAVAILABLE' });
+    return res.status(status).json(body);
   }
   
   if (error.code === 'ENOTFOUND') {
-    return res.status(503).json({
-      ok: false,
-      msg: 'Database connection failed',
-      error: 'Unable to connect to database'
-    })
+    const { status, body } = buildErrorResponse({ code: 'DB_CONN_FAILED' });
+    return res.status(status).json(body);
   }
   
-  next(error)
+  next(error);
 }
 
 // Error handler for validation errors
 export const handleValidationError = (error, req, res, next) => {
   if (error instanceof ZodError) {
-    return res.status(400).json({
-      ok: false,
-      msg: 'Validation error',
-      errors: error.errors.map(e => ({ 
-        field: e.path.join('.'),
-        message: e.message 
-      }))
-    })
+    const { status, body } = buildErrorResponse({
+      code: 'VALIDATION',
+      errors: error.errors.map(e => ({ field: e.path.join('.'), message: e.message }))
+    });
+    return res.status(status).json(body);
   }
-  next(error)
+  next(error);
 }
 
 // Error handler for JWT errors
 export const handleJWTError = (error, req, res, next) => {
   if (error instanceof jwt.JsonWebTokenError) {
-    return res.status(401).json({
-      ok: false,
-      msg: 'Invalid token',
-      error: 'Authentication failed'
-    })
+    const { status, body } = buildErrorResponse({ code: 'JWT_INVALID' });
+    return res.status(status).json(body);
   }
   
   if (error instanceof jwt.TokenExpiredError) {
-    return res.status(401).json({
-      ok: false,
-      msg: 'Token expired',
-      error: 'Please login again'
-    })
+    const { status, body } = buildErrorResponse({ code: 'JWT_EXPIRED' });
+    return res.status(status).json(body);
   }
   
-  next(error)
+  next(error);
 }
 
 // Error handler for parameter validation
 export const validateId = (req, res, next) => {
   const { id } = req.params
   
-  if (id && !/^\d+$/.test(id)) {
-    return res.status(400).json({
-      ok: false,
-      msg: 'Invalid ID format',
-      error: 'ID must be a valid number'
-    })
+  if (id && !/^[\d]+$/.test(id)) {
+    const { status, body } = buildErrorResponse({ code: 'ID_INVALID' });
+    return res.status(status).json(body);
   }
   
   next()
@@ -79,11 +62,11 @@ export const validateRequiredParams = (params) => {
     const missing = params.filter(param => !req.params[param])
     
     if (missing.length > 0) {
-      return res.status(400).json({
-        ok: false,
-        msg: 'Missing required parameters',
-        error: `Required parameters: ${missing.join(', ')}`
-      })
+      const { status, body } = buildErrorResponse({
+        code: 'PARAMS_MISSING',
+        customError: `Required parameters: ${missing.join(', ')}`
+      });
+      return res.status(status).json(body);
     }
     
     next()
@@ -92,20 +75,20 @@ export const validateRequiredParams = (params) => {
 
 // Error handler for unsupported operations
 export const handleUnsupportedOperation = (req, res) => {
-  return res.status(405).json({
-    ok: false,
-    msg: 'Method not allowed',
-    error: `${req.method} is not supported for this endpoint`
-  })
+  const { status, body } = buildErrorResponse({
+    code: 'METHOD_NOT_ALLOWED',
+    customError: `${req.method} is not supported for this endpoint`
+  });
+  return res.status(status).json(body);
 }
 
 // Error handler for resource not found
 export const handleNotFound = (req, res) => {
-  return res.status(404).json({
-    ok: false,
-    msg: 'Resource not found',
-    error: `Endpoint ${req.method} ${req.originalUrl} not found`
-  })
+  const { status, body } = buildErrorResponse({
+    code: 'NOT_FOUND',
+    customError: `Endpoint ${req.method} ${req.originalUrl} not found`
+  });
+  return res.status(status).json(body);
 }
 
 // Global error handler with more specific error types
@@ -117,33 +100,25 @@ export const globalErrorHandler = (error, req, res, next) => {
   
   // Handle specific error types
   if (error.code === '23505') { // PostgreSQL unique constraint violation
-    return res.status(409).json({
-      ok: false,
-      msg: 'Resource already exists',
-      error: 'Duplicate entry found'
-    })
+    const { status, body } = buildErrorResponse({ code: 'DUPLICATE' });
+    return res.status(status).json(body);
   }
   
   if (error.code === '23503') { // PostgreSQL foreign key constraint violation
-    return res.status(400).json({
-      ok: false,
-      msg: 'Invalid reference',
-      error: 'Referenced resource does not exist'
-    })
+    const { status, body } = buildErrorResponse({ code: 'INVALID_REFERENCE' });
+    return res.status(status).json(body);
   }
   
   if (error.code === '23502') { // PostgreSQL not null constraint violation
-    return res.status(400).json({
-      ok: false,
-      msg: 'Missing required field',
-      error: 'Required field is missing'
-    })
+    const { status, body } = buildErrorResponse({ code: 'MISSING_FIELD' });
+    return res.status(status).json(body);
   }
   
   // Default error response
-  res.status(error.status || 500).json({
-    ok: false,
-    msg: error.message || 'Internal server error',
-    error: process.env.NODE_ENV === 'development' ? error.stack : 'Something went wrong'
-  })
+  const { status, body } = buildErrorResponse({
+    code: 'DEFAULT',
+    customMsg: error.message || undefined,
+    customError: process.env.NODE_ENV === 'development' ? error.stack : undefined
+  });
+  res.status(status).json(body);
 } 
