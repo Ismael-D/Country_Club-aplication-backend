@@ -364,6 +364,17 @@ INSERT INTO inventory_suppliers (name, contact_person, phone, email, status) VAL
 ('Mobiliario Express', 'Carlos López', '555-1003', 'info@mobiliario.com', 'active')
 ON CONFLICT DO NOTHING;
 
+INSERT INTO event_types (name, description) VALUES
+  ('Torneo de Golf', 'Competencia de golf para socios y visitantes'),
+  ('Fiesta de Aniversario', 'Celebración anual del club'),
+  ('Cena de Gala', 'Evento formal con cena y música'),
+  ('Torneo de Tenis', 'Competencia de tenis para todas las edades'),
+  ('Reunión de Junta Directiva', 'Sesión mensual de la junta directiva'),
+  ('Clases de Natación', 'Clases grupales para niños y adultos'),
+  ('Taller de Cocina', 'Clase práctica de cocina gourmet'),
+  ('Concierto', 'Presentación musical en vivo'),
+  ('Día Familiar', 'Actividades recreativas para toda la familia'),
+  ('Competencia de Natación', 'Evento deportivo de natación');
 -- =====================================================
 -- ÍNDICES PARA OPTIMIZACIÓN
 -- =====================================================
