@@ -44,13 +44,15 @@ const app = express()
 console.log('✅ Express app created')
 
 // Habilitar CORS para el frontend en localhost:3002 y Netlify
+import cors from 'cors';
+
 app.use(cors({
   origin: [
-    'http://localhost:3002', // desarrollo local
-    'https://TU-SITIO-NETLIFY.netlify.app' // reemplaza con tu URL real de Netlify
+    'http://localhost:3002', // para desarrollo local
+    'https://cheerful-kheer-4619ff.netlify.app' // tu dominio real de Netlify
   ],
   credentials: true
-}))
+}));
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
