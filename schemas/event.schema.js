@@ -4,6 +4,7 @@ export const eventSchemas = {
   create: Joi.object({
     name: Joi.string().min(2).max(100).required(),
     date: Joi.date().iso().required(),
+    end_date: Joi.date().iso().optional(),
     description: Joi.string().optional(),
     location: Joi.string().min(2).max(200).required(),
     budget: Joi.number().positive().optional(),
@@ -17,6 +18,7 @@ export const eventSchemas = {
   update: Joi.object({
     name: Joi.string().min(2).max(100),
     date: Joi.date().iso(),
+    end_date: Joi.date().iso().optional(),
     description: Joi.string(),
     location: Joi.string().min(2).max(200),
     budget: Joi.number().positive(),

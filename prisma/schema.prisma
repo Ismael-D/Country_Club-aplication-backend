@@ -86,6 +86,7 @@ model Event {
   id           Int       @id @default(autoincrement())
   name         String    @db.VarChar(100)
   date         DateTime
+  end_date     DateTime? @map("end_date")
   description  String?
   location     String    @db.VarChar(200)
   budget       Decimal?  @db.Decimal(10, 2)

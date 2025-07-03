@@ -341,6 +341,8 @@ CREATE TABLE IF NOT EXISTS saved_reports (
 -- DATOS INICIALES
 -- =====================================================
 
+ALTER TABLE maintenance_tasks ADD COLUMN requested_by INTEGER;
+
 -- Insertar tipos de evento básicos
 INSERT INTO event_types (name, description, required_resources) VALUES
 ('Conferencia', 'Evento educativo con ponentes', 'Proyector, sonido, sillas'),
@@ -375,6 +377,36 @@ INSERT INTO event_types (name, description) VALUES
   ('Concierto', 'Presentación musical en vivo'),
   ('Día Familiar', 'Actividades recreativas para toda la familia'),
   ('Competencia de Natación', 'Evento deportivo de natación');
+
+INSERT INTO members (registrator_id, DNI, first_name, last_name, phone, email, membership_number, status, start_date, end_date, registration_date, membership_type)
+VALUES
+  (1, 12345678, 'Juan', 'Pérez', '04141234567', 'juan.perez@email.com', 'M1001', 'active', '2023-01-01', '2024-01-01', NOW(), 'standard'),
+  (1, 87654321, 'Ana', 'García', '04149876543', 'ana.garcia@email.com', 'M1002', 'active', '2023-02-01', '2024-02-01', NOW(), 'premium'),
+  (1, 11223344, 'Carlos', 'López', '04141112222', 'carlos.lopez@email.com', 'M1003', 'inactive', '2022-01-01', '2023-01-01', NOW(), 'standard');
+
+INSERT INTO employees (first_name, last_name, DNI, hire_date, position, salary)
+VALUES
+  ('Pedro', 'Martínez', 22334455, '2022-05-10', 'Recepcionista', 400.00),
+  ('Lucía', 'Fernández', 33445566, '2021-03-15', 'Gerente', 1200.00),
+  ('Miguel', 'Torres', 44556677, '2020-11-20', 'Mantenimiento', 500.00);
+
+INSERT INTO events (name, date, end_date, description, location, status, organizer_id, event_type_id)
+VALUES
+  ('Torneo de Golf', '2025-07-10 09:00:00', '2025-07-10 18:00:00', 'Competencia anual de golf', 'Campo principal', 'scheduled', 1, 1),
+  ('Fiesta de Aniversario', '2025-08-15 20:00:00', '2025-08-16 02:00:00', 'Celebración del aniversario del club', 'Salón principal', 'scheduled', 2, 2),
+  ('Clases de Natación', '2025-07-20 10:00:00', '2025-07-20 12:00:00', 'Clase para niños y adultos', 'Piscina', 'scheduled', 3, 3);
+
+INSERT INTO event_types (name, description)
+VALUES
+  ('Torneo de Golf', 'Competencia de golf para socios y visitantes'),
+  ('Fiesta de Aniversario', 'Celebración anual del club'),
+  ('Clases de Natación', 'Clases grupales para niños y adultos');
+
+  INSERT INTO inventory_products (name, description, unit_price, unit_of_measure, current_stock, status)
+VALUES
+  ('Pelotas de Golf', 'Pelotas para torneo', 2.50, 'units', 200, 'active'),
+  ('Sillas', 'Sillas para eventos', 15.00, 'units', 100, 'active'),
+  ('Toallas', 'Toallas para piscina', 5.00, 'units', 50, 'active');
 -- =====================================================
 -- ÍNDICES PARA OPTIMIZACIÓN
 -- =====================================================

@@ -6,6 +6,7 @@ const EventPrismaModel = {
       data: {
         name: data.name,
         date: new Date(data.date),
+        end_date: data.end_date ? new Date(data.end_date) : null,
         description: data.description,
         location: data.location,
         budget: data.budget ? parseFloat(data.budget) : null,
@@ -108,6 +109,7 @@ const EventPrismaModel = {
     
     if (data.name !== undefined) updateData.name = data.name
     if (data.date !== undefined) updateData.date = new Date(data.date)
+    if (data.end_date !== undefined) updateData.end_date = data.end_date ? new Date(data.end_date) : null
     if (data.description !== undefined) updateData.description = data.description
     if (data.location !== undefined) updateData.location = data.location
     if (data.budget !== undefined) updateData.budget = data.budget ? parseFloat(data.budget) : null
