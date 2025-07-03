@@ -63,7 +63,7 @@ model Member {
   registrationDate DateTime @default(now()) @map("registration_date")
   
   // Relaciones
-  registrator User @relation("MemberRegistrator", fields: [registratorId], references: [id])
+  registrator User @relation("MemberRegistrator", fields: [registratorId], references: [id], onDelete: Cascade)
   
   @@map("members")
 }
@@ -96,7 +96,7 @@ model Event {
   maxAttendees Int?      @map("max_attendees")
   
   // Relaciones
-  organizer User      @relation(fields: [organizerId], references: [id])
+  organizer User      @relation(fields: [organizerId], references: [id], onDelete: Cascade)
   eventType EventType @relation(fields: [eventTypeId], references: [id])
   
   @@map("events")

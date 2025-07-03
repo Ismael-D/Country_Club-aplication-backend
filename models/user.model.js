@@ -20,7 +20,10 @@ const UserPrismaModel = {
     })
   },
 
-  async findAll({ search, role, status, page = 1, limit = 10 }) {
+  async findAll({ search, role, status, page, limit }) {
+    console.log('[findAll] params:', { search, role, status, page, limit });
+    page = Number(page) || 1;
+    limit = Number(limit) || 10;
     const where = {}
     
     if (search) {

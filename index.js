@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import express from 'express'
+import cors from 'cors'
 
 console.log('🚀 Starting Country Club Backend...')
 
@@ -27,6 +28,9 @@ console.log('✅ Report routes imported')
 import employeeRouter from './routes/employee.route.js'
 console.log('✅ Employee routes imported')
 
+import eventTypeRoutes from './routes/eventType.route.js'
+console.log('✅ Event Type routes imported')
+
 import { 
     handleDatabaseError, 
     handleValidationError, 
@@ -38,6 +42,12 @@ console.log('✅ Error middlewares imported')
 
 const app = express()
 console.log('✅ Express app created')
+
+// Habilitar CORS para el frontend en localhost:3002
+app.use(cors({
+  origin: 'http://localhost:3002',
+  credentials: true
+}))
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
@@ -52,6 +62,7 @@ app.use('/api/v1/maintenance', maintenanceRouter)
 app.use('/api/v1/inventory', inventoryRouter)
 app.use('/api/v1/reports', reportRouter)
 app.use('/api/v1/employees', employeeRouter)
+app.use('/api/v1', eventTypeRoutes)
 console.log('✅ Routes configured')
 
 // Error handling middleware for JSON parsing errors (must be after routes)
