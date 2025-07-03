@@ -43,9 +43,12 @@ console.log('✅ Error middlewares imported')
 const app = express()
 console.log('✅ Express app created')
 
-// Habilitar CORS para el frontend en localhost:3002
+// Habilitar CORS para el frontend en localhost:3002 y Netlify
 app.use(cors({
-  origin: 'http://localhost:3002',
+  origin: [
+    'http://localhost:3002', // desarrollo local
+    'https://TU-SITIO-NETLIFY.netlify.app' // reemplaza con tu URL real de Netlify
+  ],
   credentials: true
 }))
 
@@ -93,4 +96,4 @@ console.log('✅ Error handlers configured')
 const PORT = process.env.PORT || 3000
 
 console.log('🎯 About to start server on port', PORT)
-app.listen(PORT, () => console.log('Servidor andando en ' + PORT))
+app.listen(PORT, '0.0.0.0', () => console.log('Servidor andando en ' + PORT))
