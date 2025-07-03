@@ -34,6 +34,11 @@ CREATE TABLE IF NOT EXISTS users (
     birth_date DATE
 );
 
+-- Insertar usuario admin con id = 1
+INSERT INTO users (id, dni, first_name, last_name, email, password, role_id, status)
+VALUES (1, '00000000', 'Admin', 'User', 'admin@example.com', 'adminpassword', 1, 'active')
+ON CONFLICT (id) DO NOTHING;
+
 -- 3. Empleados
 CREATE TABLE IF NOT EXISTS employees (
     id SERIAL PRIMARY KEY,
