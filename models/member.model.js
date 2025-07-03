@@ -1,100 +1,171 @@
-import { db } from '../database/connection.database.js'
+import { prisma } from '../lib/prisma.js'
 
-const create = async ({ registrator_id, DNI, first_name, last_name, phone, email, status = "active", start_date, end_date }) => {
-    try {
-        // Generar membership_number automáticamente
-        const membershipQuery = "SELECT nextval('membership_number_seq') as next_num"
-        const membershipResult = await db.query(membershipQuery)
-        const membershipNumber = `MEM-${membershipResult.rows[0].next_num}`
-        
-        const query = `
-            INSERT INTO members (registrator_id, DNI, first_name, last_name, phone, email, membership_number, status, start_date, end_date)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-            RETURNING id, registrator_id, DNI, first_name, last_name, phone, email, membership_number, status, start_date, end_date, registration_date
-        `
-        
-        const values = [registrator_id, DNI, first_name, last_name, phone, email, membershipNumber, status, start_date, end_date]
-        const result = await db.query(query, values)
-        
-        return result.rows[0]
-    } catch (error) {
-        throw new Error(`Error creating member: ${error.message}`)
-    }
-}
-
-const findAll = async () => {
-    try {
-        const query = `
-            SELECT m.id, m.registrator_id, m.DNI, m.first_name, m.last_name, m.phone, m.email, 
-                   m.membership_number, m.status, m.start_date, m.end_date, m.registration_date,
-                   u.first_name as registrator_first_name, u.last_name as registrator_last_name
-            FROM members m
-            LEFT JOIN users u ON m.registrator_id = u.id
-            ORDER BY m.id
-        `
-        const result = await db.query(query)
-        return result.rows
-    } catch (error) {
-        throw new Error(`Error finding all members: ${error.message}`)
-    }
-}
-
-const findOneById = async (id) => {
-    try {
-        const query = `
-            SELECT m.id, m.registrator_id, m.DNI, m.first_name, m.last_name, m.phone, m.email, 
-                   m.membership_number, m.status, m.start_date, m.end_date, m.registration_date,
-                   u.first_name as registrator_first_name, u.last_name as registrator_last_name
-            FROM members m
-            LEFT JOIN users u ON m.registrator_id = u.id
-            WHERE m.id = $1
-        `
-        const result = await db.query(query, [id])
-        return result.rows[0] || null
-    } catch (error) {
-        throw new Error(`Error finding member by id: ${error.message}`)
-    }
-}
-
-const update = async (id, data) => {
-    try {
-        // Construir la consulta dinámicamente basada en los campos proporcionados
-        const fields = Object.keys(data)
-        if (fields.length === 0) {
-            throw new Error('No fields to update')
+const MemberPrismaModel = {
+  async create(data) {
+    return await prisma.member.create({
+      data: {
+        registratorId: data.registrator_id,
+        dni: data.DNI,
+        firstName: data.first_name,
+        lastName: data.last_name,
+        phone: data.phone,
+        email: data.email,
+        membershipNumber: data.membership_number,
+        status: data.status,
+        startDate: new Date(data.start_date),
+        endDate: new Date(data.end_date)
+      },
+      include: {
+        registrator: {
+          include: {
+            role: true
+          }
         }
-        
-        const setClause = fields.map((field, index) => `${field} = $${index + 2}`).join(', ')
-        const query = `
-            UPDATE members 
-            SET ${setClause}
-            WHERE id = $1
-            RETURNING id, registrator_id, DNI, first_name, last_name, phone, email, membership_number, status, start_date, end_date, registration_date
-        `
-        
-        const values = [id, ...fields.map(field => data[field])]
-        const result = await db.query(query, values)
-        
-        return result.rows[0] || null
-    } catch (error) {
-        throw new Error(`Error updating member: ${error.message}`)
+      }
+    })
+  },
+
+  async findAll({ search, status, page = 1, limit = 10 }) {
+    const where = {}
+    
+    if (search) {
+      where.OR = [
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { membershipNumber: { contains: search, mode: 'insensitive' } }
+      ]
     }
+    
+    if (status) {
+      where.status = status
+    }
+
+    const [members, total] = await Promise.all([
+      prisma.member.findMany({
+        where,
+        include: {
+          registrator: {
+            include: {
+              role: true
+            }
+          }
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { id: 'desc' }
+      }),
+      prisma.member.count({ where })
+    ])
+
+    return {
+      members,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    }
+  },
+
+  async findById(id) {
+    return await prisma.member.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        registrator: {
+          include: {
+            role: true
+          }
+        }
+      }
+    })
+  },
+
+  async findByDNI(dni) {
+    return await prisma.member.findUnique({
+      where: { dni: parseInt(dni) },
+      include: {
+        registrator: {
+          include: {
+            role: true
+          }
+        }
+      }
+    })
+  },
+
+  async findByMembershipNumber(membershipNumber) {
+    return await prisma.member.findUnique({
+      where: { membershipNumber },
+      include: {
+        registrator: {
+          include: {
+            role: true
+          }
+        }
+      }
+    })
+  },
+
+  async update(id, data) {
+    const updateData = {}
+    
+    if (data.first_name !== undefined) updateData.firstName = data.first_name
+    if (data.last_name !== undefined) updateData.lastName = data.last_name
+    if (data.phone !== undefined) updateData.phone = data.phone
+    if (data.email !== undefined) updateData.email = data.email
+    if (data.status !== undefined) updateData.status = data.status
+    if (data.start_date !== undefined) updateData.startDate = new Date(data.start_date)
+    if (data.end_date !== undefined) updateData.endDate = new Date(data.end_date)
+
+    return await prisma.member.update({
+      where: { id: parseInt(id) },
+      data: updateData,
+      include: {
+        registrator: {
+          include: {
+            role: true
+          }
+        }
+      }
+    })
+  },
+
+  async remove(id) {
+    return await prisma.member.delete({
+      where: { id: parseInt(id) }
+    })
+  },
+
+  async getMembersByStatus(status) {
+    return await prisma.member.findMany({
+      where: { status },
+      include: {
+        registrator: {
+          include: {
+            role: true
+          }
+        }
+      }
+    })
+  },
+
+  async getActiveMembers() {
+    return await prisma.member.findMany({
+      where: { 
+        status: 'active',
+        endDate: {
+          gte: new Date()
+        }
+      },
+      include: {
+        registrator: {
+          include: {
+            role: true
+          }
+        }
+      }
+    })
+  }
 }
 
-const remove = async (id) => {
-    try {
-        const query = 'DELETE FROM members WHERE id = $1 RETURNING id'
-        const result = await db.query(query, [id])
-        return result.rows.length > 0
-    } catch (error) {
-        throw new Error(`Error removing member: ${error.message}`)
-    }
-}
-
-export const MemberModel = {
-    create,
-    findAll,
-    findOneById,
-    update,
-    remove
-}
+export default MemberPrismaModel 

@@ -1,145 +1,138 @@
-import bcrypt from 'bcryptjs'
-import { db } from '../database/connection.database.js'
+import { prisma } from '../lib/prisma.js'
 
-const create = async ({ first_name, last_name, email, phone, DNI, password, role_id = 3, status = "active", birth_date }) => {
-    try {
-        const hashedPassword = await bcrypt.hash(password, 10)
-        
-        const query = `
-            INSERT INTO users (DNI, first_name, last_name, email, password, role_id, status, phone, birth_date)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            RETURNING id, DNI, first_name, last_name, email, role_id, status, phone, birth_date, registration_date
-        `
-        
-        const values = [DNI, first_name, last_name, email, hashedPassword, role_id, status, phone, birth_date]
-        const result = await db.query(query, values)
-        
-        // Get the created user with role_name
-        const userWithRole = await findOneById(result.rows[0].id)
-        
-        return userWithRole
-    } catch (error) {
-        throw new Error(`Error creating user: ${error.message}`)
+const UserPrismaModel = {
+  async create(data) {
+    return await prisma.user.create({
+      data: {
+        dni: data.DNI,
+        firstName: data.first_name,
+        lastName: data.last_name,
+        email: data.email,
+        password: data.password,
+        roleId: data.role_id,
+        status: data.status,
+        phone: data.phone,
+        birthDate: data.birth_date ? new Date(data.birth_date) : null
+      },
+      include: {
+        role: true
+      }
+    })
+  },
+
+  async findAll({ search, role, status, page = 1, limit = 10 }) {
+    const where = {}
+    
+    if (search) {
+      where.OR = [
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } }
+      ]
     }
-}
-
-const findOneByEmail = async (email) => {
-    try {
-        const query = `
-            SELECT u.id, u.DNI, u.first_name, u.last_name, u.email, u.password, u.role_id, 
-                   u.status, u.phone, u.birth_date, u.registration_date, r.name as role_name
-            FROM users u
-            JOIN roles r ON u.role_id = r.id
-            WHERE u.email = $1
-        `
-        const result = await db.query(query, [email])
-        return result.rows[0] || null
-    } catch (error) {
-        throw new Error(`Error finding user by email: ${error.message}`)
+    
+    if (role) {
+      where.role = { name: role }
     }
-}
-
-const findOneById = async (id) => {
-    try {
-        const query = `
-            SELECT u.id, u.DNI, u.first_name, u.last_name, u.email, u.role_id, 
-                   u.status, u.phone, u.birth_date, u.registration_date, r.name as role_name
-            FROM users u
-            JOIN roles r ON u.role_id = r.id
-            WHERE u.id = $1
-        `
-        const result = await db.query(query, [id])
-        return result.rows[0] || null
-    } catch (error) {
-        throw new Error(`Error finding user by id: ${error.message}`)
+    
+    if (status) {
+      where.status = status
     }
-}
 
-const findAll = async () => {
-    try {
-        const query = `
-            SELECT u.id, u.DNI, u.first_name, u.last_name, u.email, u.role_id, 
-                   u.status, u.phone, u.birth_date, u.registration_date, r.name as role_name
-            FROM users u
-            JOIN roles r ON u.role_id = r.id
-            ORDER BY u.id
-        `
-        const result = await db.query(query)
-        return result.rows
-    } catch (error) {
-        throw new Error(`Error finding all users: ${error.message}`)
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        include: {
+          role: true
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { id: 'desc' }
+      }),
+      prisma.user.count({ where })
+    ])
+
+    return {
+      users,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
     }
+  },
+
+  async findById(id) {
+    return await prisma.user.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        role: true,
+        members: true,
+        events: {
+          include: {
+            eventType: true
+          }
+        }
+      }
+    })
+  },
+
+  async findByEmail(email) {
+    return await prisma.user.findUnique({
+      where: { email },
+      include: {
+        role: true
+      }
+    })
+  },
+
+  async findByDNI(dni) {
+    return await prisma.user.findUnique({
+      where: { dni: parseInt(dni) },
+      include: {
+        role: true
+      }
+    })
+  },
+
+  async update(id, data) {
+    const updateData = {}
+    
+    if (data.first_name !== undefined) updateData.firstName = data.first_name
+    if (data.last_name !== undefined) updateData.lastName = data.last_name
+    if (data.email !== undefined) updateData.email = data.email
+    if (data.password !== undefined) updateData.password = data.password
+    if (data.role_id !== undefined) updateData.roleId = data.role_id
+    if (data.status !== undefined) updateData.status = data.status
+    if (data.phone !== undefined) updateData.phone = data.phone
+    if (data.birth_date !== undefined) updateData.birthDate = data.birth_date ? new Date(data.birth_date) : null
+
+    return await prisma.user.update({
+      where: { id: parseInt(id) },
+      data: updateData,
+      include: {
+        role: true
+      }
+    })
+  },
+
+  async remove(id) {
+    return await prisma.user.delete({
+      where: { id: parseInt(id) }
+    })
+  },
+
+  async getUsersByRole(roleName) {
+    return await prisma.user.findMany({
+      where: {
+        role: {
+          name: roleName
+        }
+      },
+      include: {
+        role: true
+      }
+    })
+  }
 }
 
-const updateRole = async (id, role_id) => {
-    try {
-        console.log('[updateRole] id:', id, 'role_id:', role_id)
-        const query = `
-            UPDATE users 
-            SET role_id = $2
-            WHERE id = $1
-            RETURNING id
-        `
-        const result = await db.query(query, [id, role_id])
-        console.log('[updateRole] result.rows:', result.rows)
-        if (result.rows.length === 0) return null
-        // Get the updated user with role_name
-        return await findOneById(id)
-    } catch (error) {
-        throw new Error(`Error updating user role: ${error.message}`)
-    }
-}
-
-const updateStatus = async (id, status) => {
-    try {
-        const query = `
-            UPDATE users 
-            SET status = $2
-            WHERE id = $1
-            RETURNING id
-        `
-        const result = await db.query(query, [id, status])
-        
-        if (result.rows.length === 0) return null
-        
-        // Get the updated user with role_name
-        return await findOneById(id)
-    } catch (error) {
-        throw new Error(`Error updating user status: ${error.message}`)
-    }
-}
-
-const remove = async (id) => {
-    try {
-        const query = 'DELETE FROM users WHERE id = $1 RETURNING id'
-        const result = await db.query(query, [id])
-        return result.rows.length > 0
-    } catch (error) {
-        throw new Error(`Error removing user: ${error.message}`)
-    }
-}
-
-const getEventsByOrganizerId = async (organizerId) => {
-    try {
-        const query = `
-            SELECT e.*
-            FROM events e
-            WHERE e.organizer_id = $1
-        `;
-        const result = await db.query(query, [organizerId]);
-        return result.rows;
-    } catch (error) {
-        throw new Error(`Error getting events for organizer: ${error.message}`);
-    }
-}
-
-export const UserModel = {
-    create,
-    findOneByEmail,
-    findOneById,
-    findAll,
-    updateRole,
-    updateStatus,
-    remove,
-    getEventsByOrganizerId
-}
+export default UserPrismaModel 

@@ -1,10 +1,32 @@
 import 'dotenv/config'
 import express from 'express'
 
-import authRouter from './routes/auth.route.js'
+console.log('🚀 Starting Country Club Backend...')
+
+import authRouter from './auth/routes/auth.route.js'
+console.log('✅ Auth routes imported')
+
 import userRouter from './routes/user.route.js'
+console.log('✅ User routes imported')
+
 import memberRouter from './routes/member.route.js'
+console.log('✅ Member routes imported')
+
 import eventRouter from './routes/event.route.js'
+console.log('✅ Event routes imported')
+
+import maintenanceRouter from './routes/maintenance.route.js'
+console.log('✅ Maintenance routes imported')
+
+import inventoryRouter from './routes/inventory.route.js'
+console.log('✅ Inventory routes imported')
+
+import reportRouter from './routes/report.route.js'
+console.log('✅ Report routes imported')
+
+import employeeRouter from './routes/employee.route.js'
+console.log('✅ Employee routes imported')
+
 import { 
     handleDatabaseError, 
     handleValidationError, 
@@ -12,17 +34,25 @@ import {
     handleNotFound,
     globalErrorHandler 
 } from './middlewares/error.middleware.js'
+console.log('✅ Error middlewares imported')
 
 const app = express()
+console.log('✅ Express app created')
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(express.static('public'))
+console.log('✅ Middlewares configured')
 
 app.use('/api/v1/auth', authRouter)
 app.use('/api/v1/users', userRouter)
 app.use('/api/v1/members', memberRouter)
 app.use('/api/v1/events', eventRouter)
+app.use('/api/v1/maintenance', maintenanceRouter)
+app.use('/api/v1/inventory', inventoryRouter)
+app.use('/api/v1/reports', reportRouter)
+app.use('/api/v1/employees', employeeRouter)
+console.log('✅ Routes configured')
 
 // Error handling middleware for JSON parsing errors (must be after routes)
 app.use((error, req, res, next) => {
@@ -47,7 +77,9 @@ app.use(handleNotFound)
 
 // Global error handler (must be last)
 app.use(globalErrorHandler)
+console.log('✅ Error handlers configured')
 
 const PORT = process.env.PORT || 3000
 
+console.log('🎯 About to start server on port', PORT)
 app.listen(PORT, () => console.log('Servidor andando en ' + PORT))

@@ -1,0 +1,103 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modelo de roles del sistema
+model Role {
+  id   Int     @id @default(autoincrement())
+  name String  @unique @db.VarChar(50)
+  
+  // Relaciones
+  users User[]
+  
+  @@map("roles")
+}
+
+// Modelo de usuarios del sistema
+model User {
+  id               Int      @id @default(autoincrement())
+  dni              Int      @unique
+  firstName        String   @map("first_name") @db.VarChar(100)
+  lastName         String   @map("last_name") @db.VarChar(100)
+  email            String   @unique @db.VarChar(100)
+  password         String   @db.VarChar(255)
+  roleId           Int?     @map("role_id")
+  registrationDate DateTime @default(now()) @map("registration_date")
+  status           String   @db.VarChar(20) // active, inactive, suspended
+  phone            String?  @db.VarChar(20)
+  birthDate        DateTime? @map("birth_date")
+  
+  // Relaciones
+  role     Role?     @relation(fields: [roleId], references: [id])
+  members  Member[]   @relation("MemberRegistrator")
+  events   Event[]
+  
+  @@map("users")
+}
+
+// Modelo de miembros del club
+model Member {
+  id               Int      @id @default(autoincrement())
+  registratorId    Int      @map("registrator_id")
+  dni              Int      @unique
+  firstName        String   @map("first_name") @db.VarChar(100)
+  lastName         String   @map("last_name") @db.VarChar(100)
+  phone            String?  @db.VarChar(20)
+  email            String?  @unique @db.VarChar(100)
+  membershipNumber String   @unique @map("membership_number") @db.VarChar(50)
+  status           String   @db.VarChar(20) // active, inactive, suspended
+  startDate        DateTime @map("start_date")
+  endDate          DateTime @map("end_date")
+  registrationDate DateTime @default(now()) @map("registration_date")
+  
+  // Relaciones
+  registrator User @relation("MemberRegistrator", fields: [registratorId], references: [id])
+  
+  @@map("members")
+}
+
+// Modelo de tipos de eventos
+model EventType {
+  id                Int      @id @default(autoincrement())
+  name              String   @db.VarChar(100)
+  description       String?
+  requiredResources String?  @map("required_resources")
+  
+  // Relaciones
+  events Event[]
+  
+  @@map("event_types")
+}
+
+// Modelo de eventos
+model Event {
+  id           Int       @id @default(autoincrement())
+  name         String    @db.VarChar(100)
+  date         DateTime
+  description  String?
+  location     String    @db.VarChar(200)
+  budget       Decimal?  @db.Decimal(10, 2)
+  actualCost   Decimal?  @map("actual_cost") @db.Decimal(10, 2)
+  status       String    @db.VarChar(20) // scheduled, ongoing, completed, canceled
+  organizerId  Int       @map("organizer_id")
+  eventTypeId  Int       @map("event_type_id")
+  maxAttendees Int?      @map("max_attendees")
+  
+  // Relaciones
+  organizer User      @relation(fields: [organizerId], references: [id])
+  eventType EventType @relation(fields: [eventTypeId], references: [id])
+  
+  @@map("events")
+}

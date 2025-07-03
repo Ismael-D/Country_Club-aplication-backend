@@ -1,30 +1,39 @@
-import { z } from 'zod'
+import Joi from 'joi'
 
-export const userRegisterSchema = z.object({
-  first_name: z.string().min(2),
-  last_name: z.string().min(2),
-  email: z.string().email(),
-  phone: z.string().min(5),
-  DNI: z.number().int().positive(),
-  password: z.string().min(6),
-  role_id: z.number().int().min(1).max(3).optional(),
-  birth_date: z.string().optional(),
-  status: z.string().optional()
-})
+export const userSchemas = {
+  create: Joi.object({
+    first_name: Joi.string().min(2).max(100).required(),
+    last_name: Joi.string().min(2).max(100).required(),
+    email: Joi.string().email().required(),
+    phone: Joi.string().min(5).max(20).required(),
+    DNI: Joi.number().integer().positive().required(),
+    password: Joi.string().min(6).required(),
+    role_id: Joi.number().integer().min(1).max(3).default(3),
+    birth_date: Joi.date().iso().optional(),
+    status: Joi.string().valid('active', 'inactive', 'suspended').default('active')
+  }),
 
-export const userUpdateSchema = z.object({
-  first_name: z.string().min(2).optional(),
-  last_name: z.string().min(2).optional(),
-  email: z.string().email().optional(),
-  phone: z.string().min(5).optional(),
-  DNI: z.number().int().positive().optional(),
-  password: z.string().min(6).optional(),
-  role_id: z.number().int().min(1).max(3).optional(),
-  birth_date: z.string().optional(),
-  status: z.string().optional()
-})
+  update: Joi.object({
+    first_name: Joi.string().min(2).max(100),
+    last_name: Joi.string().min(2).max(100),
+    email: Joi.string().email(),
+    phone: Joi.string().min(5).max(20),
+    DNI: Joi.number().integer().positive(),
+    password: Joi.string().min(6),
+    role_id: Joi.number().integer().min(1).max(3),
+    birth_date: Joi.date().iso(),
+    status: Joi.string().valid('active', 'inactive', 'suspended')
+  }),
 
-export const userLoginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6)
-}) 
+  search: Joi.object({
+    search: Joi.string().allow(''),
+    role: Joi.string().allow(''),
+    status: Joi.string().valid('active', 'inactive', 'suspended').allow(''),
+    page: Joi.number().integer().min(1).default(1),
+    limit: Joi.number().integer().min(1).max(100).default(10)
+  }),
+
+  id: Joi.object({
+    id: Joi.number().integer().positive().required()
+  })
+} 

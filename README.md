@@ -15,17 +15,23 @@ Backend completo para sistema de gestión de Country Club con autenticación JWT
 
 ```
 Country_Club-aplication-backend/
-├── controllers/          # Lógica de negocio
-├── database/            # Conexión y esquema de BD
-├── middlewares/         # JWT, validación y manejo de errores
-├── models/             # Acceso a datos
-├── routes/             # Definición de rutas
-│   ├── auth.route.js   # Autenticación (público)
+├── auth/               # 🔐 Módulo de Autenticación
+│   ├── controllers/    # Controladores de auth (register, login)
+│   ├── routes/         # Rutas de autenticación
+│   ├── schemas/        # Esquemas de validación para auth
+│   ├── middlewares/    # Middlewares de auth y autorización
+│   ├── models/         # (Reservado para futuros modelos de auth)
+│   └── index.js        # Exportaciones del módulo auth
+├── controllers/        # Lógica de negocio (usuarios, miembros, eventos)
+├── database/          # Conexión y esquema de BD
+├── middlewares/       # Validación y manejo de errores generales
+├── models/           # Acceso a datos
+├── routes/           # Definición de rutas
 │   ├── user.route.js   # Gestión de usuarios (privado)
 │   ├── member.route.js # Gestión de miembros
 │   └── event.route.js  # Gestión de eventos
-├── schemas/            # Esquemas de validación Zod
-└── index.js            # Punto de entrada
+├── schemas/          # Esquemas de validación Zod
+└── index.js          # Punto de entrada
 ```
 
 ## 🔧 Instalación
@@ -56,6 +62,7 @@ npm start
 POST /api/v1/auth/register  - Registro de usuarios
 POST /api/v1/auth/login     - Login de usuarios
 ```
+*Nota: Las rutas de autenticación están ahora organizadas en el módulo `auth/`*
 
 ### 👤 Usuarios (Privado)
 ```

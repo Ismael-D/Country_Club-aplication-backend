@@ -1,17 +1,18 @@
-import { ZodError } from 'zod'
-
-export const validateBody = (schema) => (req, res, next) => {
+export const validateSchema = (schema) => (req, res, next) => {
   try {
-    req.body = schema.parse(req.body)
-    next()
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return res.status(400).json({
-        ok: false,
-        msg: 'Validation error',
-        errors: error.errors.map(e => ({ path: e.path, message: e.message }))
-      })
+    console.log('🔍 [Validation] Payload recibido:', JSON.stringify(req.body, null, 2))
+    const { error, value } = schema.validate(req.body, { abortEarly: false });
+    if (error) {
+      const errors = error.details.map(detail => ({ field: detail.path.join('.'), message: detail.message }));
+      console.error('❌ [Validation] Error de validación:', errors)
+      return res.status(400).json({ ok: false, msg: 'Validation error', errors });
     }
-    next(error)
+    req.body = value;
+    next();
+  } catch (error) {
+    console.error('❌ [Validation] Middleware error:', error);
+    return res.status(500).json({ ok: false, msg: 'Error interno del servidor' });
   }
-} 
+};
+
+export const validateBody = validateSchema;
