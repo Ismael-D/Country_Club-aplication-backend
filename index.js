@@ -44,8 +44,6 @@ const app = express()
 console.log('✅ Express app created')
 
 // Habilitar CORS para el frontend en localhost:3002 y Netlify
-import cors from 'cors';
-
 app.use(cors({
   origin: [
     'http://localhost:3002', // para desarrollo local
